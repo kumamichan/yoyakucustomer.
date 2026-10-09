@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>WEB予約</title>
+<meta name="theme-color" content="#b0446e">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Old+Mincho:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: お客様用。上から サロン名 → ステップ表示 → 各ステップの中身、画面下に固定の「次へ」バー */
+:root{
+  --bg:#f7f4f3; --surface:#ffffff; --sunk:#f0ebe9; --line:#e4dcd9; --line-soft:#eee8e6;
+  --fg:#2a2226; --muted:#7b6d72; --accent:#b0446e; --accent-fg:#ffffff; --accent-soft:color-mix(in srgb,var(--accent) 12%,var(--surface));
+  --ok:#2f7d4f; --ng:#b9aeb2; --danger:#b3303f; --warn-soft:#fbeadf; --warn:#a4501c;
+  --font-body:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --font-display:"Zen Old Mincho","Hiragino Mincho ProN","Noto Serif JP",serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#1a1517; --surface:#241e21; --sunk:#2c2528; --line:#3a3135; --line-soft:#2f282b;
+  --fg:#f2eaed; --muted:#a8999f; --accent-fg:#ffffff; --ok:#7fd19c; --ng:#5d5257; --danger:#f17b88; --warn-soft:#3d2a1d; --warn:#f0a36d;
+  color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+a.btn{color:var(--fg)}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.6;-webkit-tap-highlight-color:transparent;padding:env(safe-area-inset-top,0px) 0 0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.wrap{max-width:640px;margin:0 auto;padding:0 16px calc(110px + env(safe-area-inset-bottom,0px))}
+.demo{background:var(--warn-soft);color:var(--warn);font-size:12px;text-align:center;padding:6px 16px}
+
+.salon{padding:22px 0 14px;display:flex;flex-direction:column;gap:2px}
+.salon .eyebrow{font-size:11px;letter-spacing:.18em;color:var(--accent);font-weight:700}
+.salon h1{font-family:var(--font-display);font-size:26px;margin:0;line-height:1.3;text-wrap:balance}
+.salon .meta{font-size:12px;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap}
+
+.steps{display:flex;margin:4px 0 18px;padding:0;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:var(--surface)}
+.steps li{list-style:none;flex:1;min-width:0;text-align:center;font-size:11px;padding:8px 2px;color:var(--muted);position:relative;line-height:1.3}
+.steps li b{display:block;font-family:var(--font-mono);font-size:13px}
+.steps li.done{color:var(--fg)}
+.steps li.cur{background:var(--accent);color:var(--accent-fg);font-weight:700}
+.steps ol{display:contents}
+
+h2{font-size:18px;margin:0 0 12px;display:flex;align-items:baseline;gap:8px}
+h2 small{font-size:12px;color:var(--muted);font-weight:400}
+.cat{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.08em;margin:18px 2px 8px}
+.cat:first-of-type{margin-top:0}
+.menu{display:grid;grid-template-columns:auto 1fr auto;gap:4px 12px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:8px;cursor:pointer}
+.menu input{width:22px;height:22px;margin:2px 0 0;accent-color:var(--accent);grid-row:span 2}
+.menu .nm{font-weight:700;font-size:16px;line-height:1.4}
+.menu .pr{font-family:var(--font-mono);font-weight:500;font-size:17px;text-align:right;color:var(--accent);white-space:nowrap}
+.menu .sub{grid-column:2 / 4;font-size:12px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap}
+.menu .tm{display:inline-flex;align-items:center;gap:3px}
+.menu.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;background:var(--accent-soft)}
+
+.staffs{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.staff{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:14px 12px;text-align:left;display:flex;flex-direction:column;gap:2px;min-width:0}
+.staff .av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--sunk);font-family:var(--font-display);font-size:18px;margin-bottom:6px}
+.staff .nm{font-weight:700}
+.staff .rl{font-size:12px;color:var(--muted)}
+.staff[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;background:var(--accent-soft)}
+.staff.any .av{background:var(--accent);color:var(--accent-fg);font-family:var(--font-body);font-size:14px;font-weight:700}
+
+.pick{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;font-size:13px;display:flex;flex-wrap:wrap;gap:4px 14px;margin-bottom:12px}
+.pick b{font-weight:700}
+.weeknav{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.weeknav button{height:38px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-size:13px;font-weight:500}
+.weeknav button:disabled{opacity:.35;cursor:default}
+.weeknav .rng{font-size:13px;font-weight:700}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin:0 2px 8px;flex-wrap:wrap}
+.legend .o{color:var(--ok);font-weight:700}
+.tblbox{border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow:hidden}
+table.wk{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed}
+.wk th,.wk td{border-bottom:1px solid var(--line-soft);border-right:1px solid var(--line-soft);text-align:center;padding:0;height:34px}
+.wk th:last-child,.wk td:last-child{border-right:0}
+.wk thead th{position:sticky;top:env(safe-area-inset-top,0px);background:var(--surface);z-index:2;height:auto;padding:6px 0;font-size:12px;line-height:1.25;border-bottom:1px solid var(--line)}
+.wk thead th .d{font-family:var(--font-mono);font-size:14px;font-weight:500;display:block}
+.wk thead th.sun{color:var(--danger)} .wk thead th.sat{color:#3b6fa8}
+.wk thead th .cl{display:block;font-size:10px;color:var(--muted);font-weight:400}
+.wk .tc{width:46px;font-family:var(--font-mono);font-size:11px;color:var(--muted);background:var(--sunk)}
+.wk .tc.h{color:var(--fg)}
+.wk tr.h td{border-top:1px solid var(--line)}
+.wk td button{width:100%;height:100%;border:0;background:none;color:var(--ok);font-size:17px;font-weight:700;padding:0}
+.wk td button:hover{background:var(--accent-soft)}
+.wk td button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+.wk td.x{color:var(--ng);font-size:13px}
+.wk td.out{background:var(--sunk);color:var(--ng);font-size:12px}
+.loading{padding:40px 0;text-align:center;color:var(--muted);font-size:13px}
+
+.form{display:flex;flex-direction:column;gap:16px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field>label,.lbl{font-size:13px;font-weight:700}
+.req{font-size:10px;font-weight:700;color:var(--accent-fg);background:var(--accent);border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:1px}
+.opt{font-size:10px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 5px;margin-left:6px;vertical-align:1px}
+.inp{width:100%;height:48px;border-radius:10px;border:1px solid var(--line);background:var(--surface);padding:0 14px;font-size:16px}
+textarea.inp{height:auto;min-height:84px;padding:12px 14px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.seg button{flex:1;height:46px;border:0;background:none;border-right:1px solid var(--line);font-size:14px}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);font-weight:700}
+.hint{font-size:12px;color:var(--muted)}
+.err{font-size:12px;color:var(--danger);min-height:0}
+.agree{display:flex;gap:10px;align-items:flex-start;font-size:13px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.agree input{width:20px;height:20px;accent-color:var(--accent);flex:none;margin-top:1px}
+
+.conf{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.conf dl{margin:0;display:grid;grid-template-columns:7.5em 1fr}
+.conf dt,.conf dd{margin:0;padding:12px 14px;border-bottom:1px solid var(--line-soft);font-size:14px}
+.conf dt{color:var(--muted);font-size:12px;background:var(--sunk)}
+.conf dd{min-width:0;overflow-wrap:anywhere}
+.conf dl>*:nth-last-child(-n+2){border-bottom:0}
+.total{display:flex;justify-content:space-between;align-items:baseline;padding:14px;border-top:1px solid var(--line)}
+.total b{font-family:var(--font-mono);font-size:22px;color:var(--accent)}
+.alert{background:var(--warn-soft);color:var(--warn);border-radius:12px;padding:12px 14px;font-size:13px;font-weight:500;margin-bottom:12px}
+
+.done{text-align:center;padding:24px 0 8px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.done .ck{width:64px;height:64px;border-radius:50%;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center}
+.done h2{font-family:var(--font-display);font-size:24px;margin:6px 0 0;justify-content:center}
+.done .no{font-size:13px;color:var(--muted)}
+.done .no b{font-family:var(--font-mono);font-size:18px;color:var(--fg);letter-spacing:.08em}
+.notes{font-size:13px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.notes .tel{font-family:var(--font-mono);font-size:17px;color:var(--fg);user-select:all}
+
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px))}
+.bar .in{max-width:640px;margin:0 auto;display:flex;align-items:center;gap:10px}
+.bar .sum{flex:1;min-width:0;font-size:12px;color:var(--muted);line-height:1.35}
+.bar .sum b{font-family:var(--font-mono);font-size:17px;color:var(--fg)}
+.bar .sum .t{color:var(--fg);font-weight:700;font-size:14px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn{height:50px;border-radius:12px;border:1px solid var(--line);background:var(--surface);padding:0 18px;font-weight:700;font-size:15px;flex:none}
+.btn.pri{background:var(--accent);color:var(--accent-fg);border-color:transparent;min-width:120px}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.back{padding:0 14px}
+footer{font-size:11px;color:var(--muted);text-align:center;margin-top:28px}
+@media (prefers-reduced-motion:no-preference){.screen{animation:fade .2s ease-out}@keyframes fade{from{opacity:.4;transform:translateY(6px)}to{opacity:1;transform:none}}}
+</style>
+</head>
+<body>
+<div class="demo" id="demoBar" hidden>デモ表示中です。ここで入れた予約は実際のお店には届きません。</div>
+<div class="wrap">
+  <header class="salon">
+    <span class="eyebrow">WEB RESERVATION</span>
+    <h1 id="salonName">読み込み中…</h1>
+    <div class="meta" id="salonMeta"></div>
+  </header>
+  <ol class="steps" id="steps"></ol>
+  <main id="main"><p class="loading">読み込み中…</p></main>
+  <footer>ご入力いただいた情報は、ご予約の管理とご連絡のためだけに使用します。</footer>
+</div>
+<div class="bar" id="bar" hidden><div class="in" id="barIn"></div></div>
+
+<script>
+/* ================================================================
+   予約システム コアロジック（GAS とデモ表示で共通）
+   ※ このファイルの中身は gas/Code.gs の先頭にもそのまま入っています
+   ================================================================ */
+var Core = (function () {
+  var STEP = 15;
+
+  var DEFAULT_SETTINGS = {
+    salonName: "Salon Sample",
+    phone: "011-000-0000",
+    address: "札幌市中央区○○ 1-2-3",
+    message: "ご予約ありがとうございます。ご来店を心よりお待ちしております。",
+    notifyEmail: "",
+    accent: "#b0446e",
+    open: "10:00",
+    close: "20:00",
+    closedWeekdays: [2],          // 0=日 … 6=土（初期値：火曜定休）
+    holidays: [],                 // "YYYY-MM-DD"
+    seats: 1,                     // 同じ時間に受けられる人数
+    deadlineMin: 60,              // 来店の何分前まで WEB 予約を受け付けるか
+    maxDays: 60,                  // 何日先まで予約できるか
+    nomination: false,            // スタッフ指名を受け付けるか
+    staff: [],                    // {id,name,role,active}
+    menus: [
+      { id: "cut", category: "カット", name: "カット", min: 60, price: 5500, desc: "シャンプー・ブロー込み", public: true },
+      { id: "cutcolor", category: "カラー", name: "カット＋カラー", min: 120, price: 11000, desc: "根元〜全体染めまで対応", public: true },
+      { id: "color", category: "カラー", name: "カラー", min: 90, price: 7700, desc: "", public: true },
+      { id: "perm", category: "パーマ", name: "カット＋パーマ", min: 150, price: 13200, desc: "", public: true },
+      { id: "tr", category: "トリートメント", name: "トリートメント", min: 30, price: 3300, desc: "他メニューと組み合わせ可", public: true },
+      { id: "spa", category: "ヘッドスパ", name: "ヘッドスパ 30分", min: 30, price: 3850, desc: "", public: true },
+      { id: "mens", category: "カット", name: "メンズカット", min: 45, price: 4950, desc: "", public: true },
+      { id: "str", category: "縮毛矯正", name: "縮毛矯正", min: 180, price: 17600, desc: "", public: true }
+    ]
+  };
+
+  /* ---------- 小道具 ---------- */
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function toMin(s) { var p = String(s).split(":"); return Number(p[0]) * 60 + Number(p[1] || 0); }
+  function fmt(m) { return Math.floor(m / 60) + ":" + pad(m % 60); }
+  function dateAdd(ds, n) { var d = new Date(ds + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+  function dow(ds) { return new Date(ds + "T00:00:00Z").getUTCDay(); }
+  var WD = ["日", "月", "火", "水", "木", "金", "土"];
+  function jpDate(ds) { var p = ds.split("-"); return Number(p[1]) + "/" + Number(p[2]) + "（" + WD[dow(ds)] + "）"; }
+  function uid(prefix) { return (prefix || "") + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function normPhone(p) {
+    return String(p || "").replace(/[０-９]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xfee0); }).replace(/[^\d]/g, "");
+  }
+  function nowJST() { var d = new Date(Date.now() + 9 * 3600000); return { date: d.toISOString().slice(0, 10), min: d.getUTCHours() * 60 + d.getUTCMinutes(), iso: d.toISOString().slice(0, 16).replace("T", " ") }; }
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function fail(msg) { var e = new Error(msg); e.userMessage = msg; throw e; }
+  function str(v, max) { return String(v == null ? "" : v).trim().slice(0, max || 200); }
+
+  function mergeSettings(s) {
+    var out = clone(DEFAULT_SETTINGS);
+    if (s) for (var k in s) if (Object.prototype.hasOwnProperty.call(s, k) && k !== "adminKey") out[k] = s[k];
+    out.seats = Math.max(1, Number(out.seats) || 1);
+    out.deadlineMin = Math.max(0, Number(out.deadlineMin) || 0);
+    out.maxDays = Math.max(1, Number(out.maxDays) || 60);
+    out.closedWeekdays = (out.closedWeekdays || []).map(Number);
+    out.holidays = out.holidays || [];
+    out.staff = out.staff || [];
+    out.menus = out.menus || [];
+    return out;
+  }
+
+  /* ---------- 空き判定 ---------- */
+  function live(list) { return list.filter(function (b) { return b.status !== "cancelled"; }); }
+  function overlaps(b, s, e) { return b.start < e && b.start + b.dur > s; }
+  function maxConcurrent(list, s, e) {
+    var pts = [s];
+    list.forEach(function (b) { if (b.start > s && b.start < e) pts.push(b.start); });
+    var mx = 0;
+    pts.forEach(function (t) {
+      var c = 0; list.forEach(function (b) { if (b.start <= t && t < b.start + b.dur) c++; });
+      if (c > mx) mx = c;
+    });
+    return mx;
+  }
+  function isClosedDay(st, ds) { return st.closedWeekdays.indexOf(dow(ds)) >= 0 || st.holidays.indexOf(ds) >= 0; }
+  function slotFree(st, dayList, s, dur, staffId, ignoreId) {
+    var e = s + dur;
+    var rel = dayList.filter(function (b) { return b.id !== ignoreId && overlaps(b, s, e); });
+    if (rel.some(function (b) { return b.kind === "block"; })) return false;
+    if (maxConcurrent(rel, s, e) >= st.seats) return false;
+    if (staffId && rel.some(function (b) { return b.staffId === staffId; })) return false;
+    return true;
+  }
+
+  function availability(st, all, from, days, dur, staffId) {
+    var now = nowJST();
+    var open = toMin(st.open), close = toMin(st.close);
+    var last = dateAdd(now.date, st.maxDays);
+    var byDate = {};
+    live(all).forEach(function (b) { (byDate[b.date] = byDate[b.date] || []).push(b); });
+    var times = []; for (var t = open; t < close; t += STEP) times.push(t);
+    var out = {};
+    for (var i = 0; i < days; i++) {
+      var ds = dateAdd(from, i);
+      if (ds < now.date || ds > last) { out[ds] = { state: "out", slots: [] }; continue; }
+      if (isClosedDay(st, ds)) { out[ds] = { state: "closed", slots: [] }; continue; }
+      var slots = [];
+      for (var s = open; s + dur <= close; s += STEP) {
+        if (ds === now.date && s < now.min + st.deadlineMin) continue;
+        if (slotFree(st, byDate[ds] || [], s, dur, staffId)) slots.push(s);
+      }
+      out[ds] = { state: "open", slots: slots };
+    }
+    return { times: times, dates: out, today: now.date };
+  }
+
+  /* ---------- 顧客・新規判定 ---------- */
+  function customerMap(store) { var m = {}; store.customers().forEach(function (c) { m[c.id] = c; }); return m; }
+  function decorate(list, cmap) {
+    return list.map(function (b) {
+      var c = cmap[b.customerId];
+      var o = clone(b);
+      o.isNew = b.kind !== "block" && !!c && c.firstBookingId === b.id;
+      if (c) { o.name = c.name; o.gender = c.gender || b.gender; }
+      return o;
+    });
+  }
+  function touchCustomer(store, c, b) {
+    var nc = clone(c);
+    if (!nc.firstBookingId) nc.firstBookingId = b.id;
+    if (!nc.lastVisit || b.date >= nc.lastVisit) { nc.lastVisit = b.date; nc.lastMenu = (b.menus || []).map(function (m) { return m.name; }).join("＋"); }
+    store.putCustomer(nc);
+    return nc;
+  }
+
+  /* ---------- 公開 API（お客様用） ---------- */
+  function publicInfo(st) {
+    var now = nowJST();
+    return {
+      salonName: st.salonName, phone: st.phone, address: st.address, message: st.message, accent: st.accent,
+      open: st.open, close: st.close, closedWeekdays: st.closedWeekdays, deadlineMin: st.deadlineMin, maxDays: st.maxDays,
+      nomination: !!st.nomination,
+      staff: st.nomination ? st.staff.filter(function (s) { return s.active !== false; }).map(function (s) { return { id: s.id, name: s.name, role: s.role || "" }; }) : [],
+      menus: st.menus.filter(function (m) { return m.public !== false; }).map(function (m) { return { id: m.id, category: m.category || "", name: m.name, min: Number(m.min), price: Number(m.price) || 0, desc: m.desc || "" }; }),
+      today: now.date
+    };
+  }
+
+  function book(store, st, p) {
+    var name = str(p.name, 40), kana = str(p.kana, 60), phone = normPhone(p.phone), gender = ["F", "M", "O"].indexOf(p.gender) >= 0 ? p.gender : "O";
+    if (!name) fail("お名前を入力してください");
+    if (phone.length < 10 || phone.length > 11) fail("電話番号を正しく入力してください");
+    var menus = (p.menuIds || []).map(function (id) {
+      return st.menus.filter(function (m) { return m.id === id && m.public !== false; })[0];
+    }).filter(Boolean);
+    if (!menus.length) fail("メニューを選んでください");
+    var dur = menus.reduce(function (a, m) { return a + Number(m.min); }, 0);
+    var price = menus.reduce(function (a, m) { return a + (Number(m.price) || 0); }, 0);
+    var date = str(p.date, 10), start = Number(p.start);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !(start >= 0) || start % STEP) fail("日時が正しくありません");
+    var staffId = st.nomination ? str(p.staffId, 40) : "";
+    var staff = staffId ? st.staff.filter(function (s) { return s.id === staffId && s.active !== false; })[0] : null;
+    if (staffId && !staff) fail("選択したスタッフは現在ご指名いただけません");
+
+    var av = availability(st, store.bookings(), date, 1, dur, staffId);
+    var d = av.dates[date];
+    if (!d || d.state !== "open" || d.slots.indexOf(start) < 0) fail("申し訳ありません。その時間はたった今埋まってしまいました。別の時間をお選びください");
+
+    var cust = store.customers().filter(function (c) { return normPhone(c.phone) === phone; })[0];
+    if (!cust) cust = { id: uid("c"), name: name, kana: kana, phone: phone, gender: gender, memo: "", createdAt: nowJST().iso };
+    else { cust = clone(cust); if (!cust.kana && kana) cust.kana = kana; if (!cust.gender || cust.gender === "O") cust.gender = gender; }
+
+    var now = nowJST().iso;
+    var b = {
+      id: uid("b"), date: date, start: start, dur: dur, menus: menus.map(function (m) { return { id: m.id, name: m.name, min: Number(m.min), price: Number(m.price) || 0 }; }),
+      adjust: 0, price: price, customerId: cust.id, name: cust.name, kana: cust.kana || kana, phone: phone, gender: cust.gender,
+      staffId: staff ? staff.id : "", staffName: staff ? staff.name : "", memo: str(p.memo, 500),
+      source: "web", kind: "booking", status: "confirmed", createdAt: now, updatedAt: now
+    };
+    var isFirst = !cust.firstBookingId;
+    touchCustomer(store, cust, b);
+    store.putBooking(b);
+
+    if (st.notifyEmail && store.sendMail) {
+      var lines = [
+        "WEBから新しい予約が入りました。", "",
+        "日時　　：" + jpDate(date) + " " + fmt(start) + "〜" + fmt(start + dur) + "（" + dur + "分）",
+        "お名前　：" + name + (kana ? "（" + kana + "）" : "") + " 様" + (isFirst ? "【新規】" : ""),
+        "電話番号：" + phone,
+        "メニュー：" + b.menus.map(function (m) { return m.name; }).join("＋"),
+        "金額　　：¥" + price.toLocaleString("ja-JP"),
+        "指名　　：" + (staff ? staff.name : "指名なし"),
+        "ご要望　：" + (b.memo || "なし"), "",
+        "予約番号：" + b.id.slice(-6).toUpperCase()
+      ];
+      try { store.sendMail(st.notifyEmail, "【WEB予約】" + jpDate(date) + " " + fmt(start) + " " + name + " 様", lines.join("\n")); } catch (e) { }
+    }
+    return { booking: { no: b.id.slice(-6).toUpperCase(), date: date, start: start, dur: dur, menus: b.menus, price: price, staffName: b.staffName, name: name } };
+  }
+
+  /* ---------- 管理 API（お店用） ---------- */
+  function admin(store, st, p) {
+    var all = store.bookings();
+    switch (p.op) {
+      case "settings": return { settings: st };
+      case "range": {
+        var cmap = customerMap(store);
+        var list = live(all).filter(function (b) { return b.date >= p.from && b.date <= p.to; });
+        return { bookings: decorate(list, cmap) };
+      }
+      case "customers": {
+        var stats = {};
+        live(all).forEach(function (b) { if (b.kind === "block") return; var s = stats[b.customerId] = stats[b.customerId] || { visits: 0, total: 0 }; s.visits++; s.total += Number(b.price) || 0; });
+        return { customers: store.customers().map(function (c) { var o = clone(c); var s = stats[c.id] || { visits: 0, total: 0 }; o.visits = s.visits; o.total = s.total; return o; }) };
+      }
+      case "history": {
+        var c = customerMap(store);
+        var h = live(all).filter(function (b) { return b.customerId === p.customerId; });
+        h.sort(function (a, b) { return (b.date + pad(b.start)).localeCompare(a.date + pad(a.start)); });
+        return { bookings: decorate(h, c) };
+      }
+      case "saveBooking": {
+        var b = clone(p.booking || {});
+        var prev = b.id ? all.filter(function (x) { return x.id === b.id; })[0] : null;
+        var now = nowJST().iso;
+        b.id = b.id || uid("b");
+        b.kind = b.kind === "block" ? "block" : "booking";
+        b.date = str(b.date, 10); b.start = Number(b.start);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(b.date) || !(b.start >= 0)) fail("日時が正しくありません");
+        b.adjust = Number(b.adjust) || 0;
+        b.memo = str(b.memo, 500);
+        b.status = "confirmed";
+        b.source = prev ? prev.source : "store";
+        b.createdAt = prev ? prev.createdAt : now; b.updatedAt = now;
+        var stf = b.staffId ? st.staff.filter(function (s) { return s.id === b.staffId; })[0] : null;
+        b.staffId = stf ? stf.id : ""; b.staffName = stf ? stf.name : "";
+        if (b.kind === "block") {
+          b.dur = Math.max(STEP, Number(b.dur) || 60); b.menus = []; b.price = 0; b.customerId = ""; b.name = ""; b.kana = ""; b.phone = ""; b.gender = "";
+          store.putBooking(b); return { booking: b };
+        }
+        b.menus = (b.menus || []).map(function (m) { return { id: str(m.id, 40), name: str(m.name, 60), min: Number(m.min) || 0, price: Number(m.price) || 0 }; });
+        if (!b.menus.length) fail("メニューを1つ以上選んでください");
+        b.dur = Math.max(5, b.menus.reduce(function (a, m) { return a + m.min; }, 0) + b.adjust);
+        b.price = Number(b.price) || 0;
+        var cust;
+        if (p.newCustomer) {
+          var nc = p.newCustomer, ph = normPhone(nc.phone);
+          if (!str(nc.name)) fail("お名前を入力してください");
+          cust = ph ? store.customers().filter(function (c) { return normPhone(c.phone) === ph; })[0] : null;
+          if (!cust) cust = { id: uid("c"), name: str(nc.name, 40), kana: str(nc.kana, 60), phone: ph, gender: ["F", "M", "O"].indexOf(nc.gender) >= 0 ? nc.gender : "O", memo: "", createdAt: now };
+        } else {
+          cust = store.customers().filter(function (c) { return c.id === b.customerId; })[0];
+          if (!cust) fail("お客様を選んでください");
+        }
+        if (prev && prev.customerId && prev.customerId !== cust.id) {
+          var old = store.customers().filter(function (c) { return c.id === prev.customerId; })[0];
+          if (old && old.firstBookingId === prev.id) { old = clone(old); old.firstBookingId = ""; store.putCustomer(old); }
+        }
+        b.customerId = cust.id; b.name = cust.name; b.kana = cust.kana || ""; b.phone = cust.phone || ""; b.gender = cust.gender || "O";
+        touchCustomer(store, cust, b);
+        store.putBooking(b);
+        return { booking: b };
+      }
+      case "cancelBooking": {
+        var t = all.filter(function (x) { return x.id === p.id; })[0];
+        if (!t) fail("予約が見つかりません");
+        t = clone(t); t.status = "cancelled"; t.updatedAt = nowJST().iso; store.putBooking(t);
+        var cc = store.customers().filter(function (c) { return c.id === t.customerId; })[0];
+        if (cc && cc.firstBookingId === t.id) { cc = clone(cc); cc.firstBookingId = ""; store.putCustomer(cc); }
+        return {};
+      }
+      case "saveCustomer": {
+        var c2 = p.customer || {};
+        if (!str(c2.name)) fail("お名前を入力してください");
+        var ex = c2.id ? store.customers().filter(function (c) { return c.id === c2.id; })[0] : null;
+        var rec = ex ? clone(ex) : { id: uid("c"), createdAt: nowJST().iso, firstBookingId: "", lastVisit: "", lastMenu: "" };
+        rec.name = str(c2.name, 40); rec.kana = str(c2.kana, 60); rec.phone = normPhone(c2.phone); rec.memo = str(c2.memo, 1000);
+        rec.gender = ["F", "M", "O"].indexOf(c2.gender) >= 0 ? c2.gender : "O";
+        store.putCustomer(rec);
+        return { customer: rec };
+      }
+      case "deleteCustomer": store.removeCustomer(p.id); return {};
+      case "saveSettings": {
+        var ns = mergeSettings(p.settings);
+        if (toMin(ns.close) <= toMin(ns.open)) fail("閉店時間は開店時間より後にしてください");
+        ns.menus = ns.menus.filter(function (m) { return str(m.name); }).map(function (m) {
+          return { id: str(m.id, 40) || uid("m"), category: str(m.category, 30), name: str(m.name, 60), min: Math.max(5, Number(m.min) || 60), price: Math.max(0, Number(m.price) || 0), desc: str(m.desc, 200), public: m.public !== false };
+        });
+        ns.staff = ns.staff.filter(function (s) { return str(s.name); }).map(function (s) { return { id: str(s.id, 40) || uid("s"), name: str(s.name, 30), role: str(s.role, 30), active: s.active !== false }; });
+        store.putSettings(ns);
+        return { settings: ns };
+      }
+    }
+    fail("不明な操作です");
+  }
+
+  /* ---------- 入口 ---------- */
+  function dispatch(store, action, p) {
+    p = p || {};
+    try {
+      var st = mergeSettings(store.settings());
+      var res;
+      if (action === "info") res = publicInfo(st);
+      else if (action === "avail") {
+        var staffId = st.nomination ? str(p.staff, 40) : "";
+        res = availability(st, store.bookings(), str(p.from, 10), Math.min(14, Math.max(1, Number(p.days) || 7)), Math.max(STEP, Number(p.dur) || 60), staffId);
+      }
+      else if (action === "book") res = book(store, st, p);
+      else if (action === "admin") {
+        if (!store.checkKey(p.key)) return { ok: false, error: "パスワードが違います", auth: false };
+        res = admin(store, st, p);
+      }
+      else fail("不明な操作です");
+      res.ok = true;
+      return res;
+    } catch (e) {
+      return { ok: false, error: e.userMessage || "エラーが発生しました：" + (e && e.message) };
+    }
+  }
+
+  return { dispatch: dispatch, DEFAULT_SETTINGS: DEFAULT_SETTINGS, mergeSettings: mergeSettings, nowJST: nowJST, dateAdd: dateAdd, uid: uid, normPhone: normPhone, fmt: fmt, toMin: toMin };
+})();
+</script>
+<script>
+/* ================================================================
+   通信部分：URL の ?s=（GAS のデプロイID）があればスプレッドシートへ、
+   なければこの端末の中だけで動く「デモ表示」になります
+   ================================================================ */
+var API = (function () {
+  var params = new URLSearchParams(location.search);
+  var KEY_SID = "yoyaku.sid";
+  var sid = params.get("s");
+  try {
+    if (sid) localStorage.setItem(KEY_SID, sid);
+    else sid = localStorage.getItem(KEY_SID);
+  } catch (e) { }
+  var demo = !sid || sid === "demo";
+  var base = demo ? null : (/^https?:/.test(sid) ? sid : "https://script.google.com/macros/s/" + sid + "/exec");
+
+  /* ---------- デモ用ストア（この端末のブラウザに保存） ---------- */
+  var DKEY = "yoyaku.demo.v1";
+  function demoLoad() {
+    var d = null;
+    try { d = JSON.parse(localStorage.getItem(DKEY) || "null"); } catch (e) { }
+    if (!d) d = demoSeed();
+    return d;
+  }
+  function demoSave(d) { try { localStorage.setItem(DKEY, JSON.stringify(d)); } catch (e) { } }
+  function demoSeed() {
+    var st = Core.mergeSettings(null);
+    st.salonName = "Salon Sample（デモ）";
+    st.nomination = true;
+    st.seats = 2;
+    st.staff = [{ id: "s1", name: "佐々木", role: "店長", active: true }, { id: "s2", name: "高橋", role: "スタイリスト", active: true }];
+    var today = Core.nowJST().date;
+    var d = { settings: st, bookings: [], customers: [] };
+    var cs = [["c1", "山田 花子（例）", "ヤマダ ハナコ", "F"], ["c2", "佐藤 健（例）", "サトウ ケン", "M"], ["c3", "鈴木 美咲（例）", "スズキ ミサキ", "F"]];
+    cs.forEach(function (c, i) { d.customers.push({ id: c[0], name: c[1], kana: c[2], gender: c[3], phone: "0900000000" + i, memo: "", firstBookingId: "", lastVisit: "", lastMenu: "", createdAt: "" }); });
+    function add(id, cid, date, start, menuIds, src, staffId) {
+      var menus = menuIds.map(function (m) { return st.menus.filter(function (x) { return x.id === m; })[0]; });
+      var c = d.customers.filter(function (x) { return x.id === cid; })[0];
+      var b = { id: id, date: date, start: start, dur: menus.reduce(function (a, m) { return a + m.min; }, 0), menus: menus, adjust: 0, price: menus.reduce(function (a, m) { return a + m.price; }, 0), customerId: cid, name: c.name, kana: c.kana, phone: c.phone, gender: c.gender, staffId: staffId || "", staffName: staffId === "s1" ? "佐々木" : staffId === "s2" ? "高橋" : "", memo: "", source: src, kind: "booking", status: "confirmed", createdAt: "", updatedAt: "" };
+      d.bookings.push(b);
+      if (!c.firstBookingId) c.firstBookingId = id;
+      if (!c.lastVisit || date >= c.lastVisit) { c.lastVisit = date; c.lastMenu = menus.map(function (m) { return m.name; }).join("＋"); }
+    }
+    add("b0", "c1", Core.dateAdd(today, -27), 660, ["cut"], "store", "s1");
+    add("b1", "c1", today, 600, ["cutcolor"], "store", "s1");
+    add("b2", "c2", today, 735, ["mens"], "web", "s2");
+    add("b3", "c3", today, 840, ["cut", "tr"], "web", "");
+    add("b4", "c2", Core.dateAdd(today, 2), 660, ["mens"], "web", "");
+    return d;
+  }
+  function demoStore(d) {
+    return {
+      bookings: function () { return d.bookings; },
+      customers: function () { return d.customers; },
+      settings: function () { return d.settings; },
+      putBooking: function (b) { var i = d.bookings.findIndex(function (x) { return x.id === b.id; }); if (i < 0) d.bookings.push(b); else d.bookings[i] = b; },
+      putCustomer: function (c) { var i = d.customers.findIndex(function (x) { return x.id === c.id; }); if (i < 0) d.customers.push(c); else d.customers[i] = c; },
+      removeCustomer: function (id) { d.customers = d.customers.filter(function (x) { return x.id !== id; }); },
+      putSettings: function (s) { d.settings = s; },
+      checkKey: function () { return true; },
+      sendMail: function (to, subject) { console.log("[デモ] メール送信:", to, subject); }
+    };
+  }
+
+  function call(action, payload) {
+    payload = payload || {};
+    if (demo) {
+      return new Promise(function (resolve) {
+        setTimeout(function () {
+          var d = demoLoad();
+          var res = Core.dispatch(demoStore(d), action, JSON.parse(JSON.stringify(payload)));
+          demoSave(d);
+          resolve(res);
+        }, 180);
+      });
+    }
+    var req;
+    if (action === "info" || action === "avail") {
+      var q = new URLSearchParams(Object.assign({ action: action }, payload));
+      req = fetch(base + "?" + q.toString(), { method: "GET", redirect: "follow" });
+    } else {
+      req = fetch(base, { method: "POST", redirect: "follow", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(Object.assign({ action: action }, payload)) });
+    }
+    return req.then(function (r) { return r.json(); }).catch(function () {
+      return { ok: false, error: "通信できませんでした。電波の良い場所でもう一度お試しください", network: true };
+    });
+  }
+
+  function resetDemo() { try { localStorage.removeItem(DKEY); } catch (e) { } }
+
+  return { call: call, demo: demo, sid: demo ? "" : sid, resetDemo: resetDemo };
+})();
+</script>
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pad=n=>String(n).padStart(2,"0");
+const fmtT=m=>`${Math.floor(m/60)}:${pad(m%60)}`;
+const yen=n=>"¥"+(Number(n)||0).toLocaleString("ja-JP");
+const WD=["日","月","火","水","木","金","土"];
+const dow=ds=>new Date(ds+"T00:00:00Z").getUTCDay();
+const addD=(ds,n)=>{const d=new Date(ds+"T00:00:00Z");d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
+const md=ds=>{const p=ds.split("-");return `${Number(p[1])}/${Number(p[2])}`};
+const jp=ds=>{const p=ds.split("-");return `${p[0]}年${Number(p[1])}月${Number(p[2])}日（${WD[dow(ds)]}）`};
+
+const S={info:null,step:"menu",menuIds:new Set(),staffId:"",week:0,avail:{},sel:null,form:{name:"",kana:"",phone:"",gender:"",memo:"",agree:false},result:null,busy:false,alert:""};
+
+const chosen=()=>S.info.menus.filter(m=>S.menuIds.has(m.id));
+const dur=()=>chosen().reduce((a,m)=>a+m.min,0);
+const price=()=>chosen().reduce((a,m)=>a+m.price,0);
+const stepList=()=>{const l=[["menu","メニュー"]];if(S.info&&S.info.nomination&&S.info.staff.length)l.push(["staff","スタッフ"]);l.push(["date","日時"],["form","お客様情報"],["confirm","確認"]);return l};
+const staffName=()=>{if(!S.staffId)return "指名なし";const s=S.info.staff.find(x=>x.id===S.staffId);return s?s.name:"指名なし"};
+
+function go(step){S.step=step;S.alert=step==="date"?S.alert:"";render();window.scrollTo(0,0)}
+function next(){const l=stepList().map(x=>x[0]);go(l[l.indexOf(S.step)+1])}
+function back(){const l=stepList().map(x=>x[0]);const i=l.indexOf(S.step);if(i>0)go(l[i-1])}
+
+/* ---------- header ---------- */
+function renderHead(){
+  const i=S.info;
+  $("#salonName").textContent=i.salonName;
+  document.title=i.salonName+" ｜ WEB予約";
+  $("#salonMeta").innerHTML=[i.address?`<span>${esc(i.address)}</span>`:"",i.phone?`<span class="num">TEL ${esc(i.phone)}</span>`:"",`<span class="num">営業 ${esc(i.open)}〜${esc(i.close)}</span>`].join("");
+  if(i.accent){document.documentElement.style.setProperty("--accent",i.accent);document.querySelector('meta[name="theme-color"]').content=i.accent}
+}
+function renderSteps(){
+  if(S.step==="done"){$("#steps").hidden=true;return}
+  $("#steps").hidden=false;
+  const l=stepList();const cur=l.findIndex(x=>x[0]===S.step);
+  $("#steps").innerHTML=l.map((x,i)=>`<li class="${i===cur?"cur":i<cur?"done":""}" ${i===cur?'aria-current="step"':""}><b>${i+1}</b>${x[1]}</li>`).join("");
+}
+
+/* ---------- step: menu ---------- */
+function viewMenu(){
+  const cats={};S.info.menus.forEach(m=>{(cats[m.category||"メニュー"]=cats[m.category||"メニュー"]||[]).push(m)});
+  return `<section class="screen"><h2>メニューを選ぶ<small>複数選べます</small></h2>
+    ${Object.keys(cats).map(c=>`<div class="cat">${esc(c)}</div>${cats[c].map(m=>`
+      <label class="menu ${S.menuIds.has(m.id)?"on":""}">
+        <input type="checkbox" data-mid="${esc(m.id)}" ${S.menuIds.has(m.id)?"checked":""}>
+        <span class="nm">${esc(m.name)}</span><span class="pr">${yen(m.price)}</span>
+        <span class="sub"><span class="tm num">⏱ ${m.min}分</span>${m.desc?`<span>${esc(m.desc)}</span>`:""}</span>
+      </label>`).join("")}`).join("")}
+    ${S.info.menus.length?"":`<p class="loading">現在WEBで予約できるメニューがありません。お電話でお問い合わせください。</p>`}
+  </section>`;
+}
+/* ---------- step: staff ---------- */
+function viewStaff(){
+  return `<section class="screen"><h2>スタッフを選ぶ</h2><div class="staffs">
+    <button class="staff any" data-staff="" aria-pressed="${S.staffId===""}"><span class="av">おまかせ</span><span class="nm">指名なし</span><span class="rl">空いているスタッフが担当します</span></button>
+    ${S.info.staff.map(s=>`<button class="staff" data-staff="${esc(s.id)}" aria-pressed="${S.staffId===s.id}"><span class="av">${esc(s.name.slice(0,1))}</span><span class="nm">${esc(s.name)}</span><span class="rl">${esc(s.role||"スタイリスト")}</span></button>`).join("")}
+  </div></section>`;
+}
+/* ---------- step: date ---------- */
+function weekStart(){return addD(S.info.today,S.week*7)}
+function availKey(){return `${weekStart()}|${dur()}|${S.staffId}`}
+async function loadAvail(){
+  const k=availKey();if(S.avail[k])return;
+  S.avail[k]="loading";
+  const r=await API.call("avail",{from:weekStart(),days:7,dur:dur(),staff:S.staffId});
+  S.avail[k]=r.ok?r:{error:r.error||"空き状況を読み込めませんでした"};
+  if(S.step==="date")render();
+}
+function viewDate(){
+  const k=availKey();const a=S.avail[k];
+  if(!a)loadAvail();
+  const from=weekStart(),to=addD(from,6);
+  const maxWeek=Math.floor(S.info.maxDays/7);
+  let table;
+  if(!a||a==="loading")table=`<p class="loading">空き状況を確認しています…</p>`;
+  else if(a.error)table=`<p class="loading">${esc(a.error)}<br><button class="btn" id="retry" style="margin-top:10px;height:40px">もう一度読み込む</button></p>`;
+  else{
+    const days=[];for(let i=0;i<7;i++)days.push(addD(from,i));
+    const head=days.map(d=>{const st=a.dates[d]||{state:"out"};const w=dow(d);
+      return `<th class="${w===0?"sun":w===6?"sat":""}"><span class="d">${md(d)}</span>（${WD[w]}）${st.state==="closed"?'<span class="cl">定休日</span>':""}</th>`}).join("");
+    const rows=a.times.map(t=>{const hr=t%60===0;
+      return `<tr class="${hr?"h":""}"><td class="tc ${hr?"h":""}">${fmtT(t)}</td>${days.map(d=>{const st=a.dates[d]||{state:"out",slots:[]};
+        if(st.state!=="open")return `<td class="out">－</td>`;
+        if(st.slots.includes(t)){const on=S.sel&&S.sel.date===d&&S.sel.start===t;
+          return `<td><button data-d="${d}" data-t="${t}" aria-pressed="${on}" aria-label="${jp(d)} ${fmtT(t)} 予約可">${on?"✓":"○"}</button></td>`}
+        return `<td class="x">×</td>`}).join("")}</tr>`}).join("");
+    table=`<div class="tblbox"><table class="wk"><thead><tr><th class="tc">時間</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  }
+  return `<section class="screen"><h2>日時を選ぶ</h2>
+    ${S.alert?`<div class="alert">${esc(S.alert)}</div>`:""}
+    <div class="pick"><span>メニュー <b>${esc(chosen().map(m=>m.name).join("＋"))}</b></span><span>所要時間 <b class="num">約${dur()}分</b></span>${S.info.nomination&&S.info.staff.length?`<span>スタッフ <b>${esc(staffName())}</b></span>`:""}</div>
+    <div class="weeknav"><button id="wPrev" ${S.week<=0?"disabled":""}>‹ 前の1週間</button><span class="rng num">${md(from)}〜${md(to)}</span><button id="wNext" ${S.week>=maxWeek?"disabled":""}>次の1週間 ›</button></div>
+    <div class="legend"><span><span class="o">○</span> 予約できます</span><span>× 予約できません</span><span>－ 受付時間外・定休日</span></div>
+    ${table}
+    <p class="hint" style="margin-top:10px">ご来店の${S.info.deadlineMin>=60?S.info.deadlineMin/60+"時間":S.info.deadlineMin+"分"}前まで、${S.info.maxDays}日先までWEBでご予約いただけます。</p>
+  </section>`;
+}
+/* ---------- step: form ---------- */
+function viewForm(){
+  const f=S.form;
+  return `<section class="screen"><h2>お客様情報の入力</h2><div class="form">
+    <div class="field"><label for="fName">お名前<span class="req">必須</span></label><input class="inp" id="fName" autocomplete="name" placeholder="例）山田 花子" value="${esc(f.name)}"><span class="err" id="eName"></span></div>
+    <div class="field"><label for="fKana">フリガナ<span class="req">必須</span></label><input class="inp" id="fKana" placeholder="例）ヤマダ ハナコ" value="${esc(f.kana)}"><span class="err" id="eKana"></span></div>
+    <div class="field"><label for="fPhone">電話番号<span class="req">必須</span></label><input class="inp num" id="fPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="例）09012345678" value="${esc(f.phone)}"><span class="hint">ご予約の確認でお電話することがあります</span><span class="err" id="ePhone"></span></div>
+    <div class="field"><span class="lbl">性別<span class="req">必須</span></span><div class="seg" id="fGender">${[["F","女性"],["M","男性"],["O","その他・回答しない"]].map(g=>`<button type="button" data-g="${g[0]}" aria-pressed="${f.gender===g[0]}">${g[1]}</button>`).join("")}</div><span class="err" id="eGender"></span></div>
+    <div class="field"><label for="fMemo">ご要望・ご質問<span class="opt">任意</span></label><textarea class="inp" id="fMemo" placeholder="例）前回より明るめにしたいです">${esc(f.memo)}</textarea></div>
+    <label class="agree"><input type="checkbox" id="fAgree" ${f.agree?"checked":""}><span>入力した情報を、${esc(S.info.salonName)}がご予約の管理とご連絡のために使用することに同意します。</span></label>
+    <span class="err" id="eAgree"></span>
+  </div></section>`;
+}
+function validate(){
+  const f=S.form;let ok=true;const set=(id,msg)=>{const e=$("#"+id);if(e)e.textContent=msg;if(msg)ok=false};
+  set("eName",f.name.trim()?"":"お名前を入力してください");
+  set("eKana",f.kana.trim()?"":"フリガナを入力してください");
+  const ph=Core.normPhone(f.phone);set("ePhone",ph.length>=10&&ph.length<=11?"":"電話番号を10〜11桁の数字で入力してください");
+  set("eGender",f.gender?"":"性別を選んでください");
+  set("eAgree",f.agree?"":"内容をご確認のうえ、チェックを入れてください");
+  if(!ok){const e=document.querySelector(".err:not(:empty)");if(e)e.scrollIntoView({block:"center",behavior:"smooth"})}
+  return ok;
+}
+/* ---------- step: confirm ---------- */
+function viewConfirm(){
+  const f=S.form,s=S.sel;
+  return `<section class="screen"><h2>予約内容の確認</h2>
+    <div class="conf"><dl>
+      <dt>日時</dt><dd><b>${jp(s.date)}</b><br><span class="num">${fmtT(s.start)}〜${fmtT(s.start+dur())}</span>（約${dur()}分）</dd>
+      <dt>メニュー</dt><dd>${chosen().map(m=>`${esc(m.name)}　<span class="num">${yen(m.price)}</span>`).join("<br>")}</dd>
+      ${S.info.nomination&&S.info.staff.length?`<dt>スタッフ</dt><dd>${esc(staffName())}</dd>`:""}
+      <dt>お名前</dt><dd>${esc(f.name)}（${esc(f.kana)}）様</dd>
+      <dt>電話番号</dt><dd class="num">${esc(Core.normPhone(f.phone))}</dd>
+      <dt>ご要望</dt><dd>${f.memo?esc(f.memo).replace(/\n/g,"<br>"):"なし"}</dd>
+    </dl><div class="total"><span>お支払い予定金額（税込）</span><b>${yen(price())}</b></div></div>
+    <p class="hint" style="margin-top:10px">お支払いはご来店時に店頭でお願いします。施術内容によって金額が変わる場合があります。</p>
+  </section>`;
+}
+/* ---------- done ---------- */
+function viewDone(){
+  const b=S.result;
+  return `<section class="screen"><div class="done">
+      <span class="ck"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+      <h2>ご予約が確定しました</h2>
+      <span class="no">予約番号　<b>${esc(b.no)}</b></span>
+    </div>
+    <div class="conf"><dl>
+      <dt>日時</dt><dd><b>${jp(b.date)}</b><br><span class="num">${fmtT(b.start)}〜${fmtT(b.start+b.dur)}</span></dd>
+      <dt>メニュー</dt><dd>${b.menus.map(m=>esc(m.name)).join("＋")}</dd>
+      ${b.staffName?`<dt>スタッフ</dt><dd>${esc(b.staffName)}</dd>`:""}
+      <dt>お名前</dt><dd>${esc(b.name)} 様</dd>
+    </dl><div class="total"><span>お支払い予定金額</span><b>${yen(b.price)}</b></div></div>
+    <div class="notes">
+      <span>この画面のスクリーンショットを保存しておくと便利です。</span>
+      <span>ご予約の変更・キャンセルは、お手数ですがお電話でご連絡ください。</span>
+      ${S.info.phone?`<span class="tel">${esc(S.info.phone)}</span>`:""}
+      ${S.info.message?`<span>${esc(S.info.message)}</span>`:""}
+    </div></section>`;
+}
+
+/* ---------- bottom bar ---------- */
+function renderBar(){
+  const bar=$("#bar"),inn=$("#barIn");
+  if(S.step==="done"){bar.hidden=false;inn.innerHTML=`<span class="sum"></span><button class="btn pri" id="again">トップに戻る</button>`;return}
+  bar.hidden=false;
+  const backBtn=S.step!=="menu"?`<button class="btn back" id="bBack" aria-label="戻る">‹ 戻る</button>`:"";
+  let sum="",label="次へ",dis=false;
+  if(S.step==="menu"){const n=S.menuIds.size;sum=n?`<span class="t">${n}件選択中・約${dur()}分</span>合計 <b>${yen(price())}</b>`:`<span class="t">メニューを選んでください</span>`;dis=!n}
+  else if(S.step==="staff"){sum=`<span class="t">${esc(staffName())}</span>スタッフ`}
+  else if(S.step==="date"){sum=S.sel?`<span class="t">${md(S.sel.date)}（${WD[dow(S.sel.date)]}） ${fmtT(S.sel.start)}〜</span>約${dur()}分`:`<span class="t">○の時間を選んでください</span>`;dis=!S.sel}
+  else if(S.step==="form"){sum=`<span class="t">${md(S.sel.date)} ${fmtT(S.sel.start)}〜</span>合計 <b>${yen(price())}</b>`;label="確認へ"}
+  else if(S.step==="confirm"){sum=`合計 <b>${yen(price())}</b>`;label=S.busy?"送信中…":"予約を確定する";dis=S.busy}
+  inn.innerHTML=`${backBtn}<span class="sum">${sum}</span><button class="btn pri" id="bNext" ${dis?"disabled":""}>${label}</button>`;
+}
+
+function render(){
+  renderSteps();
+  const v={menu:viewMenu,staff:viewStaff,date:viewDate,form:viewForm,confirm:viewConfirm,done:viewDone}[S.step];
+  $("#main").innerHTML=v();
+  renderBar();
+}
+
+/* ---------- events ---------- */
+$("#main").addEventListener("change",e=>{const t=e.target;
+  if(t.dataset.mid){t.checked?S.menuIds.add(t.dataset.mid):S.menuIds.delete(t.dataset.mid);S.sel=null;t.closest(".menu").classList.toggle("on",t.checked);renderBar()}
+  if(t.id==="fAgree")S.form.agree=t.checked;
+});
+$("#main").addEventListener("input",e=>{const t=e.target;const m={fName:"name",fKana:"kana",fPhone:"phone",fMemo:"memo"}[t.id];if(m)S.form[m]=t.value});
+$("#main").addEventListener("click",e=>{const t=e.target.closest("button");if(!t)return;
+  if(t.dataset.staff!=null){S.staffId=t.dataset.staff;S.sel=null;document.querySelectorAll(".staff").forEach(b=>b.setAttribute("aria-pressed",String(b===t)));renderBar()}
+  else if(t.dataset.t){S.sel={date:t.dataset.d,start:Number(t.dataset.t)};render()}
+  else if(t.id==="wPrev"){S.week=Math.max(0,S.week-1);render()}
+  else if(t.id==="wNext"){S.week++;render()}
+  else if(t.id==="retry"){delete S.avail[availKey()];render()}
+  else if(t.dataset.g){S.form.gender=t.dataset.g;document.querySelectorAll("#fGender button").forEach(b=>b.setAttribute("aria-pressed",String(b===t)))}
+});
+$("#bar").addEventListener("click",async e=>{const t=e.target.closest("button");if(!t||t.disabled)return;
+  if(t.id==="bBack")return back();
+  if(t.id==="again"){S.menuIds.clear();S.staffId="";S.sel=null;S.week=0;S.avail={};S.result=null;S.form.memo="";S.form.agree=false;return go("menu")}
+  if(t.id!=="bNext")return;
+  if(S.step==="form"){if(!validate())return;return go("confirm")}
+  if(S.step==="confirm"){
+    S.busy=true;renderBar();
+    const f=S.form;
+    const r=await API.call("book",{menuIds:[...S.menuIds],date:S.sel.date,start:S.sel.start,staffId:S.staffId,name:f.name.trim(),kana:f.kana.trim(),phone:f.phone,gender:f.gender,memo:f.memo.trim()});
+    S.busy=false;
+    if(r.ok){S.result=r.booking;return go("done")}
+    if(r.network){renderBar();S.alert=r.error;$("#main").insertAdjacentHTML("afterbegin",`<div class="alert">${esc(r.error)}</div>`);return}
+    S.alert=r.error||"予約できませんでした。別の時間をお選びください";S.sel=null;S.avail={};return go("date");
+  }
+  if(S.step==="menu"||S.step==="staff")S.alert="";
+  next();
+});
+
+/* ---------- boot ---------- */
+(async()=>{
+  if(API.demo)$("#demoBar").hidden=false;
+  const r=await API.call("info");
+  if(!r.ok){$("#salonName").textContent="ページを開けませんでした";$("#main").innerHTML=`<p class="loading">${esc(r.error||"")}<br>時間をおいてもう一度開いてください。</p>`;return}
+  S.info=r;renderHead();render();
+})();
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+})();
+</script>
+</body>
+</html>
