@@ -60,6 +60,36 @@ h2 small{font-size:12px;color:var(--muted);font-weight:400}
 .menu .tm{display:inline-flex;align-items:center;gap:3px}
 .menu.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;background:var(--accent-soft)}
 
+.tabs2{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface);margin-bottom:10px}
+.tabs2 button{flex:1;height:46px;border:0;background:none;font-weight:700;font-size:15px;color:var(--muted);border-right:1px solid var(--line)}
+.tabs2 button:last-child{border-right:0}
+.tabs2 button[aria-selected="true"]{background:var(--accent);color:var(--accent-fg)}
+.tabs2 small{font-family:var(--font-mono);font-weight:500;margin-left:4px}
+.lead2{font-size:12px;color:var(--muted);margin:0 2px 12px}
+.cpn{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;display:flex;flex-direction:column;gap:8px}
+.cpn.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.cpn .hd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--muted)}
+.tgt{font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;color:#fff}
+.tgt.new{background:#d4572a}.tgt.repeat{background:#3a72b0}.tgt.all{background:#5d7a3a}
+.cpn .nm{font-weight:700;font-size:16px;line-height:1.45}
+.cpn .prices{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.cpn .pr{font-family:var(--font-mono);font-size:22px;font-weight:500;color:var(--accent)}
+.cpn .reg{font-size:12px;color:var(--muted)}
+.cpn .reg s{font-family:var(--font-mono)}
+.cpn .off{font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-soft);border-radius:6px;padding:1px 6px}
+.cpn .tm{font-size:12px;color:var(--muted)}
+.cpn dl{margin:0;display:grid;grid-template-columns:4.5em 1fr;gap:4px 8px;font-size:13px}
+.cpn dt{color:var(--muted)}
+.cpn dd{margin:0;min-width:0}
+.desc{font-size:13px;line-height:1.7;white-space:pre-wrap}
+.desc.clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.more{border:0;background:none;color:var(--accent);font-size:12px;font-weight:700;padding:0;align-self:flex-start}
+.cpn .pick-btn{height:44px;border-radius:10px;border:1px solid var(--accent);background:var(--surface);color:var(--accent);font-weight:700}
+.cpn.on .pick-btn{background:var(--accent);color:var(--accent-fg)}
+.selcp{display:flex;align-items:center;gap:8px;background:var(--accent-soft);border-radius:12px;padding:10px 12px;font-size:13px;margin-bottom:12px}
+.selcp b{flex:1;min-width:0}
+.selcp button{border:0;background:none;color:var(--accent);font-weight:700;font-size:12px}
+.menu .desc{grid-column:2 / 4;color:var(--muted);font-size:12px}
 .staffs{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
 .staff{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:14px 12px;text-align:left;display:flex;flex-direction:column;gap:2px;min-width:0}
 .staff .av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--sunk);font-family:var(--font-display);font-size:18px;margin-bottom:6px}
@@ -189,8 +219,19 @@ var Core = (function () {
       { id: "spa", category: "ヘッドスパ", name: "ヘッドスパ 30分", min: 30, price: 3850, desc: "", public: true },
       { id: "mens", category: "カット", name: "メンズカット", min: 45, price: 4950, desc: "", public: true },
       { id: "str", category: "縮毛矯正", name: "縮毛矯正", min: 180, price: 17600, desc: "", public: true }
-    ]
+    ],
+    coupons: []
   };
+
+  /* 見本のクーポン（デモ表示と、新しいサロンの初期設定で使います） */
+  var SAMPLE_COUPONS = [
+      { id: "cpn1", name: "【初めての方】カット＋カラー＋トリートメント", target: "new", price: 9900, regular: 14300, min: 150, menuIds: ["cutcolor", "tr"],
+        desc: "初めてのご来店の方限定。カウンセリングでなりたい髪色をしっかりお伺いし、ダメージを抑えたカラーで仕上げます。トリートメントで手触りもなめらかに。", terms: "ご来店が初めての方限定／他クーポンとの併用不可", validFrom: "", validTo: "", public: true },
+      { id: "cpn2", name: "【全員】カット＋トリートメント", target: "all", price: 7700, regular: 8800, min: 90, menuIds: ["cut", "tr"],
+        desc: "毛先のパサつきが気になる方に。カットと集中補修トリートメントのセットです。", terms: "他クーポンとの併用不可", validFrom: "", validTo: "", public: true },
+      { id: "cpn3", name: "【再来】リタッチカラー＋ヘッドスパ", target: "repeat", price: 6600, regular: 8250, min: 75, menuIds: ["color", "spa"],
+        desc: "2回目以降のご来店の方へ。根元のリタッチカラーと、頭皮をほぐすヘッドスパのセットです。", terms: "2回目以降のご来店の方限定", validFrom: "", validTo: "", public: true }
+    ];
 
   /* ---------- 小道具 ---------- */
   function pad(n) { return (n < 10 ? "0" : "") + n; }
@@ -219,6 +260,7 @@ var Core = (function () {
     out.holidays = out.holidays || [];
     out.staff = out.staff || [];
     out.menus = out.menus || [];
+    out.coupons = out.coupons || [];
     return out;
   }
 
@@ -286,6 +328,20 @@ var Core = (function () {
     return nc;
   }
 
+  /* ---------- クーポン ---------- */
+  var TARGET = { all: "全員", "new": "新規", repeat: "再来" };
+  function couponValid(c, today) {
+    if (c.public === false) return false;
+    if (c.validFrom && today < c.validFrom) return false;
+    if (c.validTo && today > c.validTo) return false;
+    return true;
+  }
+  function couponItem(c) { return { id: c.id, name: "【クーポン】" + c.name, min: Number(c.min) || 0, price: Number(c.price) || 0, coupon: true }; }
+  function hasVisited(store, cust) {
+    if (!cust) return false;
+    return live(store.bookings()).some(function (b) { return b.customerId === cust.id && b.kind !== "block"; });
+  }
+
   /* ---------- 公開 API（お客様用） ---------- */
   function publicInfo(st) {
     var now = nowJST();
@@ -295,6 +351,11 @@ var Core = (function () {
       nomination: !!st.nomination,
       staff: st.nomination ? st.staff.filter(function (s) { return s.active !== false; }).map(function (s) { return { id: s.id, name: s.name, role: s.role || "" }; }) : [],
       menus: st.menus.filter(function (m) { return m.public !== false; }).map(function (m) { return { id: m.id, category: m.category || "", name: m.name, min: Number(m.min), price: Number(m.price) || 0, desc: m.desc || "" }; }),
+      coupons: st.coupons.filter(function (c) { return couponValid(c, now.date); }).map(function (c) {
+        return { id: c.id, name: c.name, target: c.target || "all", price: Number(c.price) || 0, regular: Number(c.regular) || 0, min: Number(c.min) || 0,
+          contents: (c.menuIds || []).map(function (id) { var m = st.menus.filter(function (x) { return x.id === id; })[0]; return m ? m.name : ""; }).filter(Boolean),
+          desc: c.desc || "", terms: c.terms || "", validTo: c.validTo || "" };
+      }),
       today: now.date
     };
   }
@@ -306,7 +367,13 @@ var Core = (function () {
     var menus = (p.menuIds || []).map(function (id) {
       return st.menus.filter(function (m) { return m.id === id && m.public !== false; })[0];
     }).filter(Boolean);
-    if (!menus.length) fail("メニューを選んでください");
+    var coupon = null;
+    if (p.couponId) {
+      coupon = st.coupons.filter(function (c) { return c.id === p.couponId; })[0];
+      if (!coupon || !couponValid(coupon, nowJST().date)) fail("選んだクーポンは現在ご利用いただけません。もう一度お選びください");
+      menus = [couponItem(coupon)].concat(menus);
+    }
+    if (!menus.length) fail("クーポンかメニューを選んでください");
     var dur = menus.reduce(function (a, m) { return a + Number(m.min); }, 0);
     var price = menus.reduce(function (a, m) { return a + (Number(m.price) || 0); }, 0);
     var date = str(p.date, 10), start = Number(p.start);
@@ -320,12 +387,14 @@ var Core = (function () {
     if (!d || d.state !== "open" || d.slots.indexOf(start) < 0) fail("申し訳ありません。その時間はたった今埋まってしまいました。別の時間をお選びください");
 
     var cust = store.customers().filter(function (c) { return normPhone(c.phone) === phone; })[0];
+    if (coupon && coupon.target === "new" && hasVisited(store, cust)) fail("「" + coupon.name + "」は初めてご来店の方限定のクーポンです。別のクーポンかメニューをお選びください");
+    if (coupon && coupon.target === "repeat" && !hasVisited(store, cust)) fail("「" + coupon.name + "」は2回目以降のご来店の方限定のクーポンです。お電話番号が前回と同じかご確認ください");
     if (!cust) cust = { id: uid("c"), name: name, kana: kana, phone: phone, gender: gender, memo: "", createdAt: nowJST().iso };
     else { cust = clone(cust); if (!cust.kana && kana) cust.kana = kana; if (!cust.gender || cust.gender === "O") cust.gender = gender; }
 
     var now = nowJST().iso;
     var b = {
-      id: uid("b"), date: date, start: start, dur: dur, menus: menus.map(function (m) { return { id: m.id, name: m.name, min: Number(m.min), price: Number(m.price) || 0 }; }),
+      id: uid("b"), date: date, start: start, dur: dur, menus: menus.map(function (m) { return { id: m.id, name: m.name, min: Number(m.min), price: Number(m.price) || 0, coupon: !!m.coupon }; }),
       adjust: 0, price: price, customerId: cust.id, name: cust.name, kana: cust.kana || kana, phone: phone, gender: cust.gender,
       staffId: staff ? staff.id : "", staffName: staff ? staff.name : "", memo: str(p.memo, 500),
       source: "web", kind: "booking", status: "confirmed", createdAt: now, updatedAt: now
@@ -391,7 +460,7 @@ var Core = (function () {
           b.dur = Math.max(STEP, Number(b.dur) || 60); b.menus = []; b.price = 0; b.customerId = ""; b.name = ""; b.kana = ""; b.phone = ""; b.gender = "";
           store.putBooking(b); return { booking: b };
         }
-        b.menus = (b.menus || []).map(function (m) { return { id: str(m.id, 40), name: str(m.name, 60), min: Number(m.min) || 0, price: Number(m.price) || 0 }; });
+        b.menus = (b.menus || []).map(function (m) { return { id: str(m.id, 40), name: str(m.name, 120), min: Number(m.min) || 0, price: Number(m.price) || 0, coupon: !!m.coupon }; });
         if (!b.menus.length) fail("メニューを1つ以上選んでください");
         b.dur = Math.max(5, b.menus.reduce(function (a, m) { return a + m.min; }, 0) + b.adjust);
         b.price = Number(b.price) || 0;
@@ -437,7 +506,15 @@ var Core = (function () {
         var ns = mergeSettings(p.settings);
         if (toMin(ns.close) <= toMin(ns.open)) fail("閉店時間は開店時間より後にしてください");
         ns.menus = ns.menus.filter(function (m) { return str(m.name); }).map(function (m) {
-          return { id: str(m.id, 40) || uid("m"), category: str(m.category, 30), name: str(m.name, 60), min: Math.max(5, Number(m.min) || 60), price: Math.max(0, Number(m.price) || 0), desc: str(m.desc, 200), public: m.public !== false };
+          return { id: str(m.id, 40) || uid("m"), category: str(m.category, 30), name: str(m.name, 60), min: Math.max(5, Number(m.min) || 60), price: Math.max(0, Number(m.price) || 0), desc: str(m.desc, 1000), public: m.public !== false };
+        });
+        var menuIds = ns.menus.map(function (m) { return m.id; });
+        ns.coupons = (ns.coupons || []).filter(function (c) { return str(c.name); }).map(function (c) {
+          return { id: str(c.id, 40) || uid("cp"), name: str(c.name, 80), target: ["all", "new", "repeat"].indexOf(c.target) >= 0 ? c.target : "all",
+            price: Math.max(0, Number(c.price) || 0), regular: Math.max(0, Number(c.regular) || 0), min: Math.max(5, Number(c.min) || 60),
+            menuIds: (c.menuIds || []).filter(function (id) { return menuIds.indexOf(id) >= 0; }),
+            desc: str(c.desc, 1000), terms: str(c.terms, 300), validFrom: /^\d{4}-\d{2}-\d{2}$/.test(c.validFrom || "") ? c.validFrom : "",
+            validTo: /^\d{4}-\d{2}-\d{2}$/.test(c.validTo || "") ? c.validTo : "", public: c.public !== false };
         });
         ns.staff = ns.staff.filter(function (s) { return str(s.name); }).map(function (s) { return { id: str(s.id, 40) || uid("s"), name: str(s.name, 30), role: str(s.role, 30), active: s.active !== false }; });
         store.putSettings(ns);
@@ -471,7 +548,7 @@ var Core = (function () {
     }
   }
 
-  return { dispatch: dispatch, DEFAULT_SETTINGS: DEFAULT_SETTINGS, mergeSettings: mergeSettings, nowJST: nowJST, dateAdd: dateAdd, uid: uid, normPhone: normPhone, fmt: fmt, toMin: toMin };
+  return { SAMPLE_COUPONS: SAMPLE_COUPONS, TARGET: TARGET, dispatch: dispatch, DEFAULT_SETTINGS: DEFAULT_SETTINGS, mergeSettings: mergeSettings, nowJST: nowJST, dateAdd: dateAdd, uid: uid, normPhone: normPhone, fmt: fmt, toMin: toMin };
 })();
 </script>
 <script>
@@ -482,13 +559,23 @@ var Core = (function () {
 var API = (function () {
   var params = new URLSearchParams(location.search);
   var KEY_SID = "yoyaku.sid";
-  var sid = params.get("s");
+  /* 貼り付けられたURL・ID から デプロイID を取り出す */
+  function parseSid(input) {
+    var v = String(input || "").trim(), m;
+    if (!v) return "";
+    if (v === "demo") return "demo";
+    m = v.match(/\/macros\/s\/([A-Za-z0-9_-]{20,})/); if (m) return m[1];
+    m = v.match(/[?&]s=([A-Za-z0-9_-]{20,}|demo)/); if (m) return m[1];
+    if (/^[A-Za-z0-9_-]{20,}$/.test(v)) return v;
+    return "";
+  }
+  var sid = parseSid(params.get("s"));
   try {
     if (sid) localStorage.setItem(KEY_SID, sid);
-    else sid = localStorage.getItem(KEY_SID);
+    else sid = parseSid(localStorage.getItem(KEY_SID));
   } catch (e) { }
-  var demo = !sid || sid === "demo";
-  var base = demo ? null : (/^https?:/.test(sid) ? sid : "https://script.google.com/macros/s/" + sid + "/exec");
+  function setSid(v) { sid = v || ""; try { if (sid) localStorage.setItem(KEY_SID, sid); else localStorage.removeItem(KEY_SID); } catch (e) { } }
+  function baseOf(id) { return "https://script.google.com/macros/s/" + id + "/exec"; }
 
   /* ---------- デモ用ストア（この端末のブラウザに保存） ---------- */
   var DKEY = "yoyaku.demo.v1";
@@ -504,6 +591,7 @@ var API = (function () {
     st.salonName = "Salon Sample（デモ）";
     st.nomination = true;
     st.seats = 2;
+    st.coupons = JSON.parse(JSON.stringify(Core.SAMPLE_COUPONS));
     st.staff = [{ id: "s1", name: "佐々木", role: "店長", active: true }, { id: "s2", name: "高橋", role: "スタイリスト", active: true }];
     var today = Core.nowJST().date;
     var d = { settings: st, bookings: [], customers: [] };
@@ -538,9 +626,10 @@ var API = (function () {
     };
   }
 
-  function call(action, payload) {
+  function call(action, payload, opt) {
     payload = payload || {};
-    if (demo) {
+    var use = (opt && opt.sid) || sid;
+    if (!use || use === "demo") {
       return new Promise(function (resolve) {
         setTimeout(function () {
           var d = demoLoad();
@@ -550,7 +639,7 @@ var API = (function () {
         }, 180);
       });
     }
-    var req;
+    var base = baseOf(use), req;
     if (action === "info" || action === "avail") {
       var q = new URLSearchParams(Object.assign({ action: action }, payload));
       req = fetch(base + "?" + q.toString(), { method: "GET", redirect: "follow" });
@@ -564,7 +653,12 @@ var API = (function () {
 
   function resetDemo() { try { localStorage.removeItem(DKEY); } catch (e) { } }
 
-  return { call: call, demo: demo, sid: demo ? "" : sid, resetDemo: resetDemo };
+  return {
+    call: call, parseSid: parseSid, setSid: setSid, resetDemo: resetDemo,
+    get demo() { return !sid || sid === "demo"; },
+    get connected() { return !!sid; },
+    get sid() { return sid && sid !== "demo" ? sid : ""; }
+  };
 })();
 </script>
 <script>
@@ -581,16 +675,20 @@ const addD=(ds,n)=>{const d=new Date(ds+"T00:00:00Z");d.setUTCDate(d.getUTCDate(
 const md=ds=>{const p=ds.split("-");return `${Number(p[1])}/${Number(p[2])}`};
 const jp=ds=>{const p=ds.split("-");return `${p[0]}年${Number(p[1])}月${Number(p[2])}日（${WD[dow(ds)]}）`};
 
-const S={info:null,step:"menu",menuIds:new Set(),staffId:"",week:0,avail:{},sel:null,form:{name:"",kana:"",phone:"",gender:"",memo:"",agree:false},result:null,busy:false,alert:""};
+const S={info:null,step:"menu",menuTab:"",couponId:"",openDesc:new Set(),menuIds:new Set(),staffId:"",week:0,avail:{},sel:null,form:{name:"",kana:"",phone:"",gender:"",memo:"",agree:false},result:null,busy:false,alert:""};
 
-const chosen=()=>S.info.menus.filter(m=>S.menuIds.has(m.id));
+const coupon=()=>S.couponId?S.info.coupons.find(c=>c.id===S.couponId)||null:null;
+const chosen=()=>{const c=coupon();const list=S.info.menus.filter(m=>S.menuIds.has(m.id));return c?[{id:c.id,name:"【クーポン】"+c.name,min:c.min,price:c.price,coupon:true},...list]:list};
+const TGT={all:"全員",new:"新規",repeat:"再来"};
+function descBlock(key,text){if(!text)return "";const open=S.openDesc.has(key);const long=text.length>60||text.includes("\n");
+  return `<p class="desc ${long&&!open?"clamp":""}">${esc(text)}</p>${long?`<button class="more" data-more="${esc(key)}">${open?"閉じる":"続きを読む"}</button>`:""}`}
 const dur=()=>chosen().reduce((a,m)=>a+m.min,0);
 const price=()=>chosen().reduce((a,m)=>a+m.price,0);
 const stepList=()=>{const l=[["menu","メニュー"]];if(S.info&&S.info.nomination&&S.info.staff.length)l.push(["staff","スタッフ"]);l.push(["date","日時"],["form","お客様情報"],["confirm","確認"]);return l};
 const staffName=()=>{if(!S.staffId)return "指名なし";const s=S.info.staff.find(x=>x.id===S.staffId);return s?s.name:"指名なし"};
 
-function go(step){S.step=step;S.alert=step==="date"?S.alert:"";render();window.scrollTo(0,0)}
-function next(){const l=stepList().map(x=>x[0]);go(l[l.indexOf(S.step)+1])}
+function go(step){S.step=step;S.alert=(step==="date"||step==="menu")?S.alert:"";render();window.scrollTo(0,0)}
+function next(){S.alert="";const l=stepList().map(x=>x[0]);go(l[l.indexOf(S.step)+1])}
 function back(){const l=stepList().map(x=>x[0]);const i=l.indexOf(S.step);if(i>0)go(l[i-1])}
 
 /* ---------- header ---------- */
@@ -610,16 +708,33 @@ function renderSteps(){
 
 /* ---------- step: menu ---------- */
 function viewMenu(){
-  const cats={};S.info.menus.forEach(m=>{(cats[m.category||"メニュー"]=cats[m.category||"メニュー"]||[]).push(m)});
-  return `<section class="screen"><h2>メニューを選ぶ<small>複数選べます</small></h2>
-    ${Object.keys(cats).map(c=>`<div class="cat">${esc(c)}</div>${cats[c].map(m=>`
+  const cps=S.info.coupons||[];
+  if(!S.menuTab)S.menuTab=cps.length?"coupon":"menu";
+  const tabs=`<div class="tabs2" role="tablist"><button role="tab" data-mt="coupon" aria-selected="${S.menuTab==="coupon"}">クーポン<small>${cps.length}</small></button><button role="tab" data-mt="menu" aria-selected="${S.menuTab==="menu"}">メニュー<small>${S.info.menus.length}</small></button></div>`;
+  const c=coupon();
+  const sel=c?`<div class="selcp"><span class="tgt ${c.target}">${TGT[c.target]}</span><b>${esc(c.name)}</b><button data-cp="${esc(c.id)}">外す</button></div>`:"";
+  let body;
+  if(S.menuTab==="coupon"){
+    body=`<p class="lead2">クーポンは1つ選べます。メニュータブから追加のメニューも選べます。</p>`+(cps.length?cps.map(x=>{const on=S.couponId===x.id;const off=x.regular>x.price?Math.round((1-x.price/x.regular)*100):0;
+      return `<article class="cpn ${on?"on":""}">
+        <div class="hd"><span class="tgt ${x.target}">${TGT[x.target]}</span>${x.validTo?`<span>有効期限 ${md(x.validTo)}まで</span>`:""}</div>
+        <div class="nm">${esc(x.name)}</div>
+        <div class="prices"><span class="pr">${yen(x.price)}</span>${x.regular>x.price?`<span class="reg">通常 <s>${yen(x.regular)}</s></span><span class="off">${off}%OFF</span>`:""}<span class="tm num">⏱ ${x.min}分</span></div>
+        ${descBlock("c:"+x.id,x.desc)}
+        <dl>${x.contents.length?`<dt>内容</dt><dd>${esc(x.contents.join("＋"))}</dd>`:""}<dt>対象</dt><dd>${x.target==="new"?"初めてご来店の方":x.target==="repeat"?"2回目以降のご来店の方":"どなたでも"}</dd>${x.terms?`<dt>条件</dt><dd>${esc(x.terms)}</dd>`:""}</dl>
+        <button class="pick-btn" data-cp="${esc(x.id)}" aria-pressed="${on}">${on?"✓ 選択中（もう一度押すと外れます）":"このクーポンを選ぶ"}</button>
+      </article>`}).join(""):`<p class="loading">現在使えるクーポンはありません。メニューからお選びください。</p>`);
+  } else {
+    const cats={};S.info.menus.forEach(m=>{(cats[m.category||"メニュー"]=cats[m.category||"メニュー"]||[]).push(m)});
+    body=`<p class="lead2">複数選べます。${c?"選んだクーポンに追加されます。":""}</p>`+Object.keys(cats).map(k=>`<div class="cat">${esc(k)}</div>${cats[k].map(m=>`
       <label class="menu ${S.menuIds.has(m.id)?"on":""}">
         <input type="checkbox" data-mid="${esc(m.id)}" ${S.menuIds.has(m.id)?"checked":""}>
         <span class="nm">${esc(m.name)}</span><span class="pr">${yen(m.price)}</span>
-        <span class="sub"><span class="tm num">⏱ ${m.min}分</span>${m.desc?`<span>${esc(m.desc)}</span>`:""}</span>
-      </label>`).join("")}`).join("")}
-    ${S.info.menus.length?"":`<p class="loading">現在WEBで予約できるメニューがありません。お電話でお問い合わせください。</p>`}
-  </section>`;
+        <span class="sub"><span class="tm num">⏱ ${m.min}分</span></span>
+        ${m.desc?`<span class="desc">${esc(m.desc)}</span>`:""}
+      </label>`).join("")}`).join("")+(S.info.menus.length?"":`<p class="loading">現在WEBで予約できるメニューがありません。</p>`);
+  }
+  return `<section class="screen"><h2>クーポン・メニューを選ぶ</h2>${S.alert?`<div class="alert">${esc(S.alert)}</div>`:""}${tabs}${sel}${body}</section>`;
 }
 /* ---------- step: staff ---------- */
 function viewStaff(){
@@ -660,7 +775,7 @@ function viewDate(){
   }
   return `<section class="screen"><h2>日時を選ぶ</h2>
     ${S.alert?`<div class="alert">${esc(S.alert)}</div>`:""}
-    <div class="pick"><span>メニュー <b>${esc(chosen().map(m=>m.name).join("＋"))}</b></span><span>所要時間 <b class="num">約${dur()}分</b></span>${S.info.nomination&&S.info.staff.length?`<span>スタッフ <b>${esc(staffName())}</b></span>`:""}</div>
+    <div class="pick"><span>内容 <b>${esc(chosen().map(m=>m.name).join("＋"))}</b></span><span>所要時間 <b class="num">約${dur()}分</b></span>${S.info.nomination&&S.info.staff.length?`<span>スタッフ <b>${esc(staffName())}</b></span>`:""}</div>
     <div class="weeknav"><button id="wPrev" ${S.week<=0?"disabled":""}>‹ 前の1週間</button><span class="rng num">${md(from)}〜${md(to)}</span><button id="wNext" ${S.week>=maxWeek?"disabled":""}>次の1週間 ›</button></div>
     <div class="legend"><span><span class="o">○</span> 予約できます</span><span>× 予約できません</span><span>－ 受付時間外・定休日</span></div>
     ${table}
@@ -670,7 +785,8 @@ function viewDate(){
 /* ---------- step: form ---------- */
 function viewForm(){
   const f=S.form;
-  return `<section class="screen"><h2>お客様情報の入力</h2><div class="form">
+  const cpn=coupon();
+  return `<section class="screen"><h2>お客様情報の入力</h2>${cpn&&cpn.target!=="all"?`<div class="alert">選択中のクーポンは${cpn.target==="new"?"初めてご来店の方":"2回目以降のご来店の方"}限定です。${cpn.target==="repeat"?"前回と同じ電話番号を入力してください。":""}</div>`:""}<div class="form">
     <div class="field"><label for="fName">お名前<span class="req">必須</span></label><input class="inp" id="fName" autocomplete="name" placeholder="例）山田 花子" value="${esc(f.name)}"><span class="err" id="eName"></span></div>
     <div class="field"><label for="fKana">フリガナ<span class="req">必須</span></label><input class="inp" id="fKana" placeholder="例）ヤマダ ハナコ" value="${esc(f.kana)}"><span class="err" id="eKana"></span></div>
     <div class="field"><label for="fPhone">電話番号<span class="req">必須</span></label><input class="inp num" id="fPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="例）09012345678" value="${esc(f.phone)}"><span class="hint">ご予約の確認でお電話することがあります</span><span class="err" id="ePhone"></span></div>
@@ -696,7 +812,7 @@ function viewConfirm(){
   return `<section class="screen"><h2>予約内容の確認</h2>
     <div class="conf"><dl>
       <dt>日時</dt><dd><b>${jp(s.date)}</b><br><span class="num">${fmtT(s.start)}〜${fmtT(s.start+dur())}</span>（約${dur()}分）</dd>
-      <dt>メニュー</dt><dd>${chosen().map(m=>`${esc(m.name)}　<span class="num">${yen(m.price)}</span>`).join("<br>")}</dd>
+      <dt>クーポン<br>メニュー</dt><dd>${chosen().map(m=>`${esc(m.name)}　<span class="num">${yen(m.price)}</span>`).join("<br>")}</dd>
       ${S.info.nomination&&S.info.staff.length?`<dt>スタッフ</dt><dd>${esc(staffName())}</dd>`:""}
       <dt>お名前</dt><dd>${esc(f.name)}（${esc(f.kana)}）様</dd>
       <dt>電話番号</dt><dd class="num">${esc(Core.normPhone(f.phone))}</dd>
@@ -715,7 +831,7 @@ function viewDone(){
     </div>
     <div class="conf"><dl>
       <dt>日時</dt><dd><b>${jp(b.date)}</b><br><span class="num">${fmtT(b.start)}〜${fmtT(b.start+b.dur)}</span></dd>
-      <dt>メニュー</dt><dd>${b.menus.map(m=>esc(m.name)).join("＋")}</dd>
+      <dt>内容</dt><dd>${b.menus.map(m=>esc(m.name)).join("<br>")}</dd>
       ${b.staffName?`<dt>スタッフ</dt><dd>${esc(b.staffName)}</dd>`:""}
       <dt>お名前</dt><dd>${esc(b.name)} 様</dd>
     </dl><div class="total"><span>お支払い予定金額</span><b>${yen(b.price)}</b></div></div>
@@ -734,7 +850,7 @@ function renderBar(){
   bar.hidden=false;
   const backBtn=S.step!=="menu"?`<button class="btn back" id="bBack" aria-label="戻る">‹ 戻る</button>`:"";
   let sum="",label="次へ",dis=false;
-  if(S.step==="menu"){const n=S.menuIds.size;sum=n?`<span class="t">${n}件選択中・約${dur()}分</span>合計 <b>${yen(price())}</b>`:`<span class="t">メニューを選んでください</span>`;dis=!n}
+  if(S.step==="menu"){const n=chosen().length;sum=n?`<span class="t">${coupon()?"クーポン"+(S.menuIds.size?"＋メニュー"+S.menuIds.size+"件":""):"メニュー"+n+"件"}・約${dur()}分</span>合計 <b>${yen(price())}</b>`:`<span class="t">クーポンかメニューを選んでください</span>`;dis=!n}
   else if(S.step==="staff"){sum=`<span class="t">${esc(staffName())}</span>スタッフ`}
   else if(S.step==="date"){sum=S.sel?`<span class="t">${md(S.sel.date)}（${WD[dow(S.sel.date)]}） ${fmtT(S.sel.start)}〜</span>約${dur()}分`:`<span class="t">○の時間を選んでください</span>`;dis=!S.sel}
   else if(S.step==="form"){sum=`<span class="t">${md(S.sel.date)} ${fmtT(S.sel.start)}〜</span>合計 <b>${yen(price())}</b>`;label="確認へ"}
@@ -756,6 +872,9 @@ $("#main").addEventListener("change",e=>{const t=e.target;
 });
 $("#main").addEventListener("input",e=>{const t=e.target;const m={fName:"name",fKana:"kana",fPhone:"phone",fMemo:"memo"}[t.id];if(m)S.form[m]=t.value});
 $("#main").addEventListener("click",e=>{const t=e.target.closest("button");if(!t)return;
+  if(t.dataset.mt){S.menuTab=t.dataset.mt;render();return}
+  if(t.dataset.cp){S.couponId=S.couponId===t.dataset.cp?"":t.dataset.cp;S.sel=null;S.alert="";render();return}
+  if(t.dataset.more){const k=t.dataset.more;S.openDesc.has(k)?S.openDesc.delete(k):S.openDesc.add(k);render();return}
   if(t.dataset.staff!=null){S.staffId=t.dataset.staff;S.sel=null;document.querySelectorAll(".staff").forEach(b=>b.setAttribute("aria-pressed",String(b===t)));renderBar()}
   else if(t.dataset.t){S.sel={date:t.dataset.d,start:Number(t.dataset.t)};render()}
   else if(t.id==="wPrev"){S.week=Math.max(0,S.week-1);render()}
@@ -765,17 +884,19 @@ $("#main").addEventListener("click",e=>{const t=e.target.closest("button");if(!t
 });
 $("#bar").addEventListener("click",async e=>{const t=e.target.closest("button");if(!t||t.disabled)return;
   if(t.id==="bBack")return back();
-  if(t.id==="again"){S.menuIds.clear();S.staffId="";S.sel=null;S.week=0;S.avail={};S.result=null;S.form.memo="";S.form.agree=false;return go("menu")}
+  if(t.id==="again"){S.menuIds.clear();S.couponId="";S.menuTab="";S.staffId="";S.sel=null;S.week=0;S.avail={};S.result=null;S.form.memo="";S.form.agree=false;return go("menu")}
   if(t.id!=="bNext")return;
   if(S.step==="form"){if(!validate())return;return go("confirm")}
   if(S.step==="confirm"){
     S.busy=true;renderBar();
     const f=S.form;
-    const r=await API.call("book",{menuIds:[...S.menuIds],date:S.sel.date,start:S.sel.start,staffId:S.staffId,name:f.name.trim(),kana:f.kana.trim(),phone:f.phone,gender:f.gender,memo:f.memo.trim()});
+    const r=await API.call("book",{couponId:S.couponId,menuIds:[...S.menuIds],date:S.sel.date,start:S.sel.start,staffId:S.staffId,name:f.name.trim(),kana:f.kana.trim(),phone:f.phone,gender:f.gender,memo:f.memo.trim()});
     S.busy=false;
     if(r.ok){S.result=r.booking;return go("done")}
     if(r.network){renderBar();S.alert=r.error;$("#main").insertAdjacentHTML("afterbegin",`<div class="alert">${esc(r.error)}</div>`);return}
-    S.alert=r.error||"予約できませんでした。別の時間をお選びください";S.sel=null;S.avail={};return go("date");
+    S.alert=r.error||"予約できませんでした。別の時間をお選びください";
+    if(/クーポン/.test(S.alert)){S.couponId="";S.sel=null;S.avail={};S.menuTab="coupon";return go("menu")}
+    S.sel=null;S.avail={};return go("date");
   }
   if(S.step==="menu"||S.step==="staff")S.alert="";
   next();
